@@ -9,6 +9,7 @@ import QueueManagement from "@/components/staff/QueueManagement";
 import StaffHeader from "@/components/staff/StaffHeader";
 import LoadingState from "@/components/staff/LoadingState";
 import { fetchDepartmentById } from "@/services/department";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const StaffDashboard = () => {
   const [staff, setStaff] = useState<Staff | null>(null);
@@ -54,10 +55,31 @@ const StaffDashboard = () => {
   return (
     <div className="container mx-auto py-6">
       <StaffHeader staff={staff} department={department} />
-      <QueueStats departmentId={staff.department_id} />
       
-      {staff.department_id && (
-        <QueueManagement departmentId={staff.department_id} />
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-4">สถิติคิว</h2>
+        <QueueStats departmentId={staff.department_id} />
+      </div>
+      
+      {staff.department_id ? (
+        <Card className="border-hospital-100">
+          <CardHeader className="bg-hospital-50">
+            <CardTitle className="text-xl text-hospital-700">
+              การจัดการคิว
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <QueueManagement departmentId={staff.department_id} />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-gray-500">
+              คุณยังไม่ได้ถูกกำหนดแผนก กรุณาติดต่อผู้ดูแลระบบ
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
