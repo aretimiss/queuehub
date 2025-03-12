@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Calendar, Clipboard, User } from "lucide-react";
+import { Calendar, Clipboard, User, LogIn } from "lucide-react";
 
 export function MainNav() {
   const location = useLocation();
@@ -21,6 +21,11 @@ export function MainNav() {
       name: "คิวทั้งหมด",
       href: "/all-queues",
       icon: Clipboard,
+    },
+    {
+      name: "เจ้าหน้าที่",
+      href: "/login",
+      icon: LogIn,
     },
   ];
 

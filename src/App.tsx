@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import MyQueue from "./pages/MyQueue";
 import AllQueues from "./pages/AllQueues";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import StaffDashboard from "./pages/StaffDashboard";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,8 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/my-queue" element={<MyQueue />} />
               <Route path="/all-queues" element={<AllQueues />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/staff-dashboard" element={<StaffDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

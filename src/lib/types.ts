@@ -27,4 +27,23 @@ export interface Queue {
   updated_at: string;
   // Add optional departments field for joined queries
   departments?: Department;
+  // Add optional patient field for joined queries
+  patient?: Patient;
+}
+
+export interface Staff {
+  id: string;
+  email: string;
+  name: string;
+  department_id: string | null;
+  role: string;
+  created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  email: string;
+  staff_id: string | null;
+  role: string;
+  created_at: string;
 }
