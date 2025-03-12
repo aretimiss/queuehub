@@ -1,38 +1,32 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "@/services/auth";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { loginUser } from "@/services/auth";
 import { toast } from "sonner";
-import { ArrowRight } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error("กรุณากรอกอีเมลและรหัสผ่าน");
-      return;
-    }
+    setIsLoading(true);
 
-    setLoading(true);
     try {
       await loginUser(email, password);
       toast.success("เข้าสู่ระบบสำเร็จ");
       navigate("/staff-dashboard");
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      toast.error("เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -40,10 +34,10 @@ const Login = () => {
     <div className="max-w-md mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>เข้าสู่ระบบสำหรับเจ้าหน้าที่</CardTitle>
+          <CardTitle className="text-2xl">เข้าสู่ระบบสำหรับเจ้าหน้าที่</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">อีเมล</Label>
               <Input
@@ -51,7 +45,8 @@ const Login = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="อีเมลของคุณ"
+                placeholder="example@hospital.com"
+                required
               />
             </div>
             <div className="space-y-2">
@@ -61,16 +56,15 @@ const Login = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="รหัสผ่านของคุณ"
+                required
               />
             </div>
             <Button 
               type="submit" 
               className="w-full"
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-              <ArrowRight className="ml-2" size={16} />
+              {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </Button>
           </form>
         </CardContent>
