@@ -13,39 +13,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const departments = [
-  { id: "general", name: "แผนกทั่วไป" },
-  { id: "dental", name: "ทันตกรรม" },
-  { id: "eye", name: "จักษุ" },
-  { id: "skin", name: "ผิวหนัง" },
-  { id: "cardio", name: "หัวใจ" },
-];
+import { createQueue, fetchAllDepartments } from "@/services/api";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const Index = () => {
   const [idCard, setIdCard] = useState("");
-  const [department, setDepartment] = useState("general");
-  const { toast } = useToast();
+  const [departmentId, setDepartmentId] = useState("");
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
+
+  // Fetch departments
+  const { data: departments = [], isLoading: isLoadingDepartments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: fetchAllDepartments
+  });
+
+  // Create queue mutation
+  const createQueueMutation = useMutation({
+    mutationFn: ({ idCard, departmentId }: { idCard: string, departmentId: string }) => 
+      createQueue(idCard, departmentId),
+    onSuccess: () => {
+      toast.success("จองคิวสำเร็จ");
+      navigate("/my-queue", { state: { idCard } });
+    },
+    onError: (error) => {
+      console.error("Error creating queue:", error);
+      uiToast({
+        variant: "destructive",
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถจองคิวได้ กรุณาลองใหม่อีกครั้ง"
+      });
+    }
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (idCard.length !== 13) {
-      toast({
+      uiToast({
         variant: "destructive",
         title: "กรุณากรอกเลขบัตรประชาชน 13 หลัก",
       });
       return;
     }
 
-    // Here we would normally make an API call to save the queue
-    toast({
-      title: "จองคิวสำเร็จ",
-      description: "กรุณารอเรียกคิวที่หน้าจอ",
-    });
+    if (!departmentId) {
+      uiToast({
+        variant: "destructive",
+        title: "กรุณาเลือกแผนก",
+      });
+      return;
+    }
 
-    navigate("/my-queue");
+    createQueueMutation.mutate({ idCard, departmentId });
   };
 
   return (
@@ -68,9 +89,9 @@ const Index = () => {
             </div>
             <div className="space-y-2">
               <Label>แผนก</Label>
-              <Select value={department} onValueChange={setDepartment}>
+              <Select value={departmentId} onValueChange={setDepartmentId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="เลือกแผนก" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((dept) => (
@@ -81,8 +102,12 @@ const Index = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-full">
-              จองคิว
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={createQueueMutation.isPending}
+            >
+              {createQueueMutation.isPending ? "กำลังจองคิว..." : "จองคิว"}
             </Button>
           </form>
         </CardContent>

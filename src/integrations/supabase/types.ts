@@ -9,7 +9,102 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      departments: {
+        Row: {
+          code: string
+          created_at: string | null
+          current_queue: string | null
+          id: string
+          name: string
+          total_waiting: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          current_queue?: string | null
+          id?: string
+          name: string
+          total_waiting?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          current_queue?: string | null
+          id?: string
+          name?: string
+          total_waiting?: number | null
+        }
+        Relationships: []
+      }
+      patients: {
+        Row: {
+          created_at: string | null
+          id: string
+          id_card: string
+          name: string | null
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          id_card: string
+          name?: string | null
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          id_card?: string
+          name?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      queues: {
+        Row: {
+          created_at: string | null
+          department_id: string | null
+          id: string
+          patient_id: string | null
+          queue_number: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department_id?: string | null
+          id?: string
+          patient_id?: string | null
+          queue_number: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department_id?: string | null
+          id?: string
+          patient_id?: string | null
+          queue_number?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queues_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queues_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

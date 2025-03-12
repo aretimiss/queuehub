@@ -32,6 +32,18 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 201 96% 32%;
+
+    --hospital-50: 201 100% 95%;
+    --hospital-100: 201 94% 86%;
+    --hospital-200: 201 94% 74%;
+    --hospital-300: 201 94% 62%;
+    --hospital-400: 201 96% 48%;
+    --hospital-500: 201 96% 36%;
+    --hospital-600: 201 96% 32%;
+    --hospital-700: 201 92% 26%;
+    --hospital-800: 201 96% 20%;
+    --hospital-900: 202 96% 16%;
+    --hospital-950: 204 96% 10%;
  
     --radius: 0.5rem;
   }
@@ -45,4 +57,22 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.5s ease-in-out;
 }

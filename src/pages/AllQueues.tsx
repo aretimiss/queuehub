@@ -1,40 +1,52 @@
 
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const departments = [
-  {
-    id: "general",
-    name: "แผนกทั่วไป",
-    currentQueue: "A123",
-    totalWaiting: 15,
-  },
-  {
-    id: "dental",
-    name: "ทันตกรรม",
-    currentQueue: "B045",
-    totalWaiting: 8,
-  },
-  {
-    id: "eye",
-    name: "จักษุ",
-    currentQueue: "C012",
-    totalWaiting: 10,
-  },
-  {
-    id: "skin",
-    name: "ผิวหนัง",
-    currentQueue: "D034",
-    totalWaiting: 5,
-  },
-  {
-    id: "cardio",
-    name: "หัวใจ",
-    currentQueue: "E007",
-    totalWaiting: 12,
-  },
-];
+import { fetchAllDepartments } from "@/services/api";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const AllQueues = () => {
+  const { 
+    data: departments = [], 
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ['allDepartments'],
+    queryFn: fetchAllDepartments
+  });
+
+  useEffect(() => {
+    // Subscribe to department changes for realtime updates
+    const channel = supabase
+      .channel('department-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'departments',
+        },
+        (payload) => {
+          console.log('Department changed:', payload);
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-60">
+        <Loader2 className="h-10 w-10 text-hospital-600 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -46,7 +58,7 @@ const AllQueues = () => {
             <CardContent className="space-y-4">
               <div className="text-center py-4">
                 <div className="text-4xl font-bold text-hospital-600">
-                  {dept.currentQueue}
+                  {dept.current_queue || "-"}
                 </div>
                 <div className="text-sm text-muted-foreground mt-2">
                   คิวปัจจุบัน
@@ -54,7 +66,7 @@ const AllQueues = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">คิวที่รอ</span>
-                <span className="font-medium">{dept.totalWaiting} คิว</span>
+                <span className="font-medium">{dept.total_waiting || 0} คิว</span>
               </div>
             </CardContent>
           </Card>
