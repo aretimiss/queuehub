@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Calendar, Clipboard, User, LogIn } from "lucide-react";
+import { Calendar, Clipboard, User, LogIn, ShieldAlert } from "lucide-react";
 
 export function MainNav() {
   const location = useLocation();
@@ -26,6 +26,11 @@ export function MainNav() {
       name: "เจ้าหน้าที่",
       href: "/login",
       icon: LogIn,
+    },
+    {
+      name: "ผู้ดูแลระบบ",
+      href: "/admin-login",
+      icon: ShieldAlert,
     },
   ];
 

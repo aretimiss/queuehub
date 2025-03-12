@@ -11,6 +11,8 @@ import AllQueues from "./pages/AllQueues";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import StaffDashboard from "./pages/StaffDashboard";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
               <Route path="/all-queues" element={<AllQueues />} />
               <Route path="/login" element={<Login />} />
               <Route path="/staff-dashboard" element={<StaffDashboard />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
