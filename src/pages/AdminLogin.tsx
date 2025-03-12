@@ -17,7 +17,7 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     // แค่ตรวจสอบว่ารหัสคือ "root" (ไม่มีการตรวจสอบกับฐานข้อมูล)
-    if (password === "root") {
+    if (password === "กลุ่ม3มี3คน") {
       // เก็บสถานะการล็อกอินไว้ใน sessionStorage เพื่อให้สามารถรีเฟรชหน้าได้
       sessionStorage.setItem("adminAuthenticated", "true");
       toast.success("เข้าสู่ระบบสำเร็จ");
@@ -38,7 +38,7 @@ const AdminLogin = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">รหัสผ่าน (ใช้ "root")</Label>
+              <Label htmlFor="password">รหัสผ่าน</Label>
               <Input
                 id="password"
                 type="password"
