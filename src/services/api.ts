@@ -29,7 +29,7 @@ export const fetchAllQueues = async (): Promise<Queue[]> => {
     throw error;
   }
 
-  return data || [];
+  return data as Queue[] || [];
 };
 
 export const fetchDepartmentById = async (id: string): Promise<Department | null> => {
@@ -76,7 +76,7 @@ export const fetchQueuesByPatientIdCard = async (idCard: string): Promise<Queue[
     return [];
   }
 
-  return queues || [];
+  return queues as Queue[] || [];
 };
 
 export const createQueue = async (idCard: string, departmentId: string): Promise<Queue | null> => {
@@ -110,7 +110,7 @@ export const createQueue = async (idCard: string, departmentId: string): Promise
     // Get department to generate queue number
     const { data: department } = await supabase
       .from('departments')
-      .select('code, current_queue')
+      .select('code, current_queue, total_waiting')
       .eq('id', departmentId)
       .single();
     
@@ -157,7 +157,7 @@ export const createQueue = async (idCard: string, departmentId: string): Promise
       })
       .eq('id', departmentId);
     
-    return newQueue;
+    return newQueue as Queue;
   } catch (error) {
     console.error("Error in createQueue:", error);
     toast.error("เกิดข้อผิดพลาดในการจองคิว กรุณาลองใหม่อีกครั้ง");

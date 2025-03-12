@@ -21,7 +21,10 @@ export interface Queue {
   queue_number: string;
   patient_id: string;
   department_id: string;
-  status: 'waiting' | 'called' | 'completed' | 'cancelled';
+  // Update the status type to include string for compatibility with Supabase
+  status: 'waiting' | 'called' | 'completed' | 'cancelled' | string;
   created_at: string;
   updated_at: string;
+  // Add optional departments field for joined queries
+  departments?: Department;
 }
