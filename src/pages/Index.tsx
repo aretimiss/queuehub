@@ -71,6 +71,16 @@ const Index = () => {
 
   return (
     <div className="max-w-md mx-auto">
+      <div className="mb-8 text-center">
+        <h2 className="text-xl font-bold text-hospital-700 mb-2">มินิโปรเจคนักศึกษาระบบจองคิวโรงพยาบาล</h2>
+        <p className="text-muted-foreground text-sm">
+          ลงทะเบียนด้วยเลขบัตรประชาชน รับคิวอัตโนมัติ พร้อมการแจ้งเตือนเมื่อใกล้ถึงคิว
+        </p>
+        <p className="text-muted-foreground text-sm mt-1">
+          กรุณาแสดงบัตรประชาชนพร้อมหมายเลขคิว
+        </p>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>จองคิว</CardTitle>
