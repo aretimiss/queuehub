@@ -236,7 +236,7 @@ export const fetchQueuesByDepartment = async (departmentId: string): Promise<Que
     .from('queues')
     .select(`
       *,
-      patient:patients(*)
+      patient:patient_id (*)
     `)
     .eq('department_id', departmentId)
     .order('created_at');
