@@ -64,12 +64,21 @@ const DatabaseTest = () => {
       
       if (deptQueuesError) throw deptQueuesError;
       
-      // 3. นับจำนวนคิวตามสถานะ - Fixed the query format
+      // 3. นับจำนวนคิวตามสถานะ
       const { data: statusCounts, error: statusError } = await supabase
         .from('queues')
-        .select('status, count(*)', { count: 'exact' })
+        .select('status, count(*)')
         .eq('department_id', selectedDepartment)
-        .groupBy('status');
+        .order('status')
+        .then(({ data, error }) => {
+          if (error) throw error;
+          // Process the data to get counts
+          const counts = {};
+          data.forEach(item => {
+            counts[item.status] = item.count;
+          });
+          return { data: counts, error: null };
+        });
       
       if (statusError) throw statusError;
 

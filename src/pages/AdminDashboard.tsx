@@ -66,12 +66,12 @@ const AdminDashboard = () => {
       
       if (queueError) throw queueError;
       
-      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed the query format
+      // 3. ทดสอบการนับจำนวนคิวตามสถานะ
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
-        .select('status', { count: 'exact' })
-        .is('status', 'waiting')
-        .or('status.eq.called,status.eq.completed,status.eq.cancelled');
+        .select('status, count', { count: 'exact', head: false })
+        .eq('status', 'waiting')
+        .or('status.eq.completed,status.eq.called,status.eq.cancelled');
       
       if (statsError) throw statsError;
       
