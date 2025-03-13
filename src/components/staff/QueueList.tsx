@@ -1,4 +1,4 @@
-import { Queue } from "@/lib/types";
+
 import {
   Table,
   TableHeader,
@@ -8,7 +8,6 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BellRing, CheckCircle, XCircle } from "lucide-react";
 import { Queue } from "@/lib/types";
@@ -20,7 +19,8 @@ interface QueueListProps {
   callButton?: boolean;
   cancelButton?: boolean;
   completeButton?: boolean;
-  cancelButton?: boolean;
+  serveButton?: boolean;
+  startServiceButton?: boolean;
 }
 
 const QueueList = ({ 
@@ -29,7 +29,9 @@ const QueueList = ({
   showActions = false,
   callButton = false,
   completeButton = false,
-  cancelButton = false
+  cancelButton = false,
+  serveButton = false,
+  startServiceButton = false
 }: QueueListProps) => {
   return (
     <Table>
@@ -55,6 +57,24 @@ const QueueList = ({
                       onClick={() => onStatusUpdate(queue, "called")}
                     >
                       เรียกคิว
+                    </Button>
+                  )}
+                  {startServiceButton && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onStatusUpdate(queue, "serving")}
+                    >
+                      เข้ารับบริการ
+                    </Button>
+                  )}
+                  {serveButton && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onStatusUpdate(queue, "serving")}
+                    >
+                      เข้ารับบริการ
                     </Button>
                   )}
                   {completeButton && (

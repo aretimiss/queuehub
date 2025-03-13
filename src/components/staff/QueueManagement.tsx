@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react"; // Add useMemo
+import { useState, useEffect, useMemo } from "react"; 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Queue } from "@/lib/types";
 import QueueList from "./QueueList";
-import { fetchQueuesByDepartment, updateQueueStatus } from "@/services/api"; // Add import
+import { fetchQueuesByDepartment, updateQueueStatus } from "@/services/api";
 
 interface QueueManagementProps {
   departmentId: string;
@@ -13,7 +13,7 @@ interface QueueManagementProps {
 const QueueManagement = ({ departmentId }: QueueManagementProps) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("waiting");
-  const [filteredQueues, setFilteredQueues] = useState<{ // Add filteredQueues state
+  const [filteredQueues, setFilteredQueues] = useState<{
     waiting: Queue[];
     serving: Queue[];
     called: Queue[];
@@ -77,10 +77,10 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
       cancelled: queues.filter(q => q.status === 'cancelled'),
     };
 
-    if (JSON.stringify(newFilteredQueues) !== JSON.stringify(filteredQueues)) { // Add check
+    if (JSON.stringify(newFilteredQueues) !== JSON.stringify(filteredQueues)) {
       setFilteredQueues(newFilteredQueues);
     }
-  }, [queues, departmentId, filteredQueues]); // Add filteredQueues to dependency array
+  }, [queues, departmentId, filteredQueues]);
 
   return (
     <Tabs defaultValue="waiting" value={activeTab} onValueChange={setActiveTab}>
@@ -100,7 +100,6 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
           callButton={true}
           startServiceButton={true}
           cancelButton={true}
-          serveButton={true}
         />
       </TabsContent>
 
@@ -119,6 +118,7 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
           queues={filteredQueues.called}
           onStatusUpdate={handleStatusUpdate}
           showActions={true}
+          startServiceButton={true}
           completeButton={true}
           cancelButton={true}
         />
