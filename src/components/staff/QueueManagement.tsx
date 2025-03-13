@@ -32,12 +32,12 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
   const { data: queues = [], refetch, isLoading } = useQuery({
     queryKey: ['queues', departmentId],
     queryFn: async () => {
+      console.log('Fetching queues for department:', departmentId);
       const { data, error } = await supabase
         .from('queues')
         .select(`
           *,
-          patient:patient_id (*),
-          department:department_id (*)
+          patient:patient_id (*)
         `)
         .eq('department_id', departmentId)
         .order('created_at');
@@ -48,37 +48,47 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
         throw error;
       }
       
+      console.log(`Fetched ${data?.length || 0} queues`);
       return data as Queue[] || [];
     },
-    enabled: !!departmentId
+    enabled: !!departmentId,
+    refetchInterval: 30000, // Refetch every 30 seconds as a backup
   });
 
   // Set up real-time subscription for queue updates
   useEffect(() => {
     if (!departmentId) return;
     
-    const subscription = supabase
-      .channel('queues_changes')
+    console.log('Setting up Supabase real-time subscription for queues');
+    
+    // Subscribe to ALL queue changes for this department
+    const channel = supabase
+      .channel('queue_updates')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'queues',
         filter: `department_id=eq.${departmentId}`
       }, (payload) => {
-        // Refresh data when changes occur
+        console.log('Queue update received via real-time:', payload);
         refetch();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
       
     return () => {
-      subscription.unsubscribe();
+      console.log('Unsubscribing from real-time updates');
+      supabase.removeChannel(channel);
     };
   }, [departmentId, refetch]);
 
-  // Update queue status using direct Supabase query
+  // Update queue status using useMutation and fetch fresh data after update
   const updateQueueMutation = useMutation({
     mutationFn: async ({ queueId, status }: { queueId: string, status: string }) => {
-      // Changed from .single() to .maybeSingle() to handle cases where no row is returned
+      console.log(`Updating queue ${queueId} to status ${status}`);
+      
+      // Update the queue status
       const { data, error } = await supabase
         .from('queues')
         .update({ status, updated_at: new Date().toISOString() })
@@ -92,14 +102,20 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
       }
       
       if (!data) {
+        console.error("No queue data returned after update");
         throw new Error("Queue not found or could not be updated");
       }
       
+      console.log("Queue updated successfully:", data);
       return data as Queue;
     },
-    onSuccess: () => {
-      toast.success("อัปเดตสถานะคิวเรียบร้อย");
+    onSuccess: (data) => {
+      toast.success(`อัปเดตสถานะคิวหมายเลข ${data.queue_number} เรียบร้อย`);
+      
+      // Force invalidate the query to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['queues', departmentId] });
+      
+      // Force refetch to get the latest data
       refetch();
     },
     onError: (error) => {
@@ -109,11 +125,16 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
   });
 
   const handleStatusUpdate = (queue: Queue, status: string) => {
+    console.log(`Handling status update for queue ${queue.id} to ${status}`);
     updateQueueMutation.mutate({ queueId: queue.id, status });
   };
 
   // Update filtered queues when queue data changes
   useEffect(() => {
+    if (!queues) return;
+    
+    console.log(`Filtering ${queues.length} queues based on status`);
+    
     const newFilteredQueues = {
       waiting: queues.filter(q => q.status === 'waiting'),
       serving: queues.filter(q => q.status === 'serving'),
@@ -121,11 +142,9 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
       completed: queues.filter(q => q.status === 'completed'),
       cancelled: queues.filter(q => q.status === 'cancelled'),
     };
-
-    if (JSON.stringify(newFilteredQueues) !== JSON.stringify(filteredQueues)) {
-      setFilteredQueues(newFilteredQueues);
-    }
-  }, [queues, filteredQueues]);
+    
+    setFilteredQueues(newFilteredQueues);
+  }, [queues]);
 
   if (isLoading) {
     return <div className="py-4 text-center">กำลังโหลดข้อมูลคิว...</div>;
