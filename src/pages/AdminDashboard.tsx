@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -65,11 +64,11 @@ const AdminDashboard = () => {
       
       if (queueError) throw queueError;
       
-      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed query to use proper groupBy syntax
+      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Using correct Supabase query syntax
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
         .select('status, count(*)')
-        .groupBy('status');
+        .group('status');
       
       if (statsError) throw statsError;
       
