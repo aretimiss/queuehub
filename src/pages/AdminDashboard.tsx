@@ -66,14 +66,15 @@ const AdminDashboard = () => {
       
       if (queueError) throw queueError;
       
-      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed query syntax to use correct format
+      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed the group method
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
         .select(`
           status,
-          count(*)
-        `, { count: 'exact' })
-        .groupby('status');
+          count
+        `)
+        .select('status, count(*)', { count: 'exact', head: false })
+        .group('status');
       
       if (statsError) throw statsError;
       

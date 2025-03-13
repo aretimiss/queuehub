@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -64,15 +63,12 @@ const DatabaseTest = () => {
       
       if (deptQueuesError) throw deptQueuesError;
       
-      // 3. นับจำนวนคิวตามสถานะ
+      // 3. นับจำนวนคิวตามสถานะ - Fixed the group method
       const { data: statusCounts, error: statusError } = await supabase
         .from('queues')
-        .select(`
-          status,
-          count(*)
-        `, { count: 'exact' })
+        .select('status, count(*)', { count: 'exact', head: false })
         .eq('department_id', selectedDepartment)
-        .groupby('status');
+        .group('status');
       
       if (statusError) throw statusError;
 
