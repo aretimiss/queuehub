@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from "react"; 
+
+import { useState, useEffect } from "react"; 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Queue } from "@/lib/types";
 import QueueList from "./QueueList";
-import { fetchQueuesByDepartment, updateQueueStatus } from "@/services/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QueueManagementProps {
   departmentId: string;
@@ -27,40 +28,78 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
     cancelled: [],
   });
 
-  const { data: queues = [], refetch } = useQuery({
+  // Use direct Supabase query similar to the DatabaseTest page
+  const { data: queues = [], refetch, isLoading } = useQuery({
     queryKey: ['queues', departmentId],
-    queryFn: () => fetchQueuesByDepartment(departmentId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('queues')
+        .select(`
+          *,
+          patient:patient_id (*),
+          department:department_id (*)
+        `)
+        .eq('department_id', departmentId)
+        .order('created_at');
+      
+      if (error) {
+        console.error("Error fetching queues:", error);
+        toast.error("เกิดข้อผิดพลาดในการดึงข้อมูลคิว");
+        throw error;
+      }
+      
+      return data as Queue[] || [];
+    },
     enabled: !!departmentId
   });
 
+  // Set up real-time subscription for queue updates
+  useEffect(() => {
+    if (!departmentId) return;
+    
+    const subscription = supabase
+      .channel('queues_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'queues',
+        filter: `department_id=eq.${departmentId}`
+      }, (payload) => {
+        // Refresh data when changes occur
+        refetch();
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [departmentId, refetch]);
+
+  // Update queue status using direct Supabase query
   const updateQueueMutation = useMutation({
-    mutationFn: ({ queueId, status }: { queueId: string, status: string }) =>
-      updateQueueStatus(queueId, status),
-    onMutate: async ({ queueId, status }) => {
-      await queryClient.cancelQueries({ queryKey: ['queues', departmentId] });
-      const previousQueues = queryClient.getQueryData(['queues', departmentId]);
-
-      queryClient.setQueryData(['queues', departmentId], (old: Queue[] | undefined) => {
-        return old?.map(queue => {
-          if (queue.id === queueId) {
-            return { ...queue, status };
-          }
-          return queue;
-        });
-      });
-
-      return { previousQueues };
-    },
-    onError: (err, newQueue, context) => {
-      queryClient.setQueryData(['queues', departmentId], context?.previousQueues);
-      toast.error("เกิดข้อผิดพลาดในการอัปเดตสถานะคิว");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['queues', departmentId] });
-      refetch();
+    mutationFn: async ({ queueId, status }: { queueId: string, status: string }) => {
+      const { data, error } = await supabase
+        .from('queues')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', queueId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error updating queue:", error);
+        throw error;
+      }
+      
+      return data as Queue;
     },
     onSuccess: () => {
       toast.success("อัปเดตสถานะคิวเรียบร้อย");
+      queryClient.invalidateQueries({ queryKey: ['queues', departmentId] });
+      refetch();
+    },
+    onError: (error) => {
+      console.error("Error in updateQueueStatus:", error);
+      toast.error("เกิดข้อผิดพลาดในการอัปเดตสถานะคิว");
     }
   });
 
@@ -68,6 +107,7 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
     updateQueueMutation.mutate({ queueId: queue.id, status });
   };
 
+  // Update filtered queues when queue data changes
   useEffect(() => {
     const newFilteredQueues = {
       waiting: queues.filter(q => q.status === 'waiting'),
@@ -80,7 +120,11 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
     if (JSON.stringify(newFilteredQueues) !== JSON.stringify(filteredQueues)) {
       setFilteredQueues(newFilteredQueues);
     }
-  }, [queues, departmentId, filteredQueues]);
+  }, [queues, filteredQueues]);
+
+  if (isLoading) {
+    return <div className="py-4 text-center">กำลังโหลดข้อมูลคิว...</div>;
+  }
 
   return (
     <Tabs defaultValue="waiting" value={activeTab} onValueChange={setActiveTab}>

@@ -21,7 +21,7 @@ export const fetchAllDepartments = async (): Promise<Department[]> => {
 export const fetchAllQueues = async (): Promise<Queue[]> => {
   const { data, error } = await supabase
     .from('queues')
-    .select('*')
+    .select('*, department:department_id(*), patient:patient_id(*)')
     .order('created_at');
 
   if (error) {
@@ -65,7 +65,7 @@ export const fetchQueuesByPatientIdCard = async (idCard: string): Promise<Queue[
     .from('queues')
     .select(`
       *,
-      departments(*)
+      departments:department_id(*)
     `)
     .eq('patient_id', patient.id)
     .eq('status', 'waiting')
