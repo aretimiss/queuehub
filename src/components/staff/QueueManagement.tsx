@@ -98,6 +98,7 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
           onStatusUpdate={handleStatusUpdate}
           showActions={true}
           callButton={true}
+          startServiceButton={true}
           cancelButton={true}
           serveButton={true}
         />
