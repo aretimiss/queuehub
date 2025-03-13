@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import StaffDashboard from "./pages/StaffDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import DatabaseTest from "./pages/DatabaseTest";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/staff-dashboard" element={<StaffDashboard />} />
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/database-test" element={<DatabaseTest />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,8 @@ import { toast } from "sonner";
 import QueueStats from "@/components/staff/QueueStats";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Database } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -70,7 +72,8 @@ const AdminDashboard = () => {
         .select(`
           status,
           count(*)
-        `, { count: 'exact' });
+        `, { count: 'exact' })
+        .groupby('status');
       
       if (statsError) throw statsError;
       
@@ -100,7 +103,15 @@ const AdminDashboard = () => {
     <div className="container mx-auto py-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-hospital-700">แผงควบคุมผู้ดูแลระบบ (ทดสอบ)</h1>
-        <Button variant="outline" onClick={handleLogout}>ออกจากระบบ</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/database-test">
+              <Database className="mr-2 h-4 w-4" />
+              ทดสอบฐานข้อมูล
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={handleLogout}>ออกจากระบบ</Button>
+        </div>
       </div>
 
       <Card className="mb-6">
