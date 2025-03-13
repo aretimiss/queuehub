@@ -69,7 +69,7 @@ const AdminDashboard = () => {
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
         .select('status, count(*)')
-        .groupby('status');
+        .group('status');
       
       if (statsError) throw statsError;
       
