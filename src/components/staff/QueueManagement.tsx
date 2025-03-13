@@ -28,7 +28,7 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
     cancelled: [],
   });
 
-  // Use direct Supabase query similar to the DatabaseTest page
+  // Use direct Supabase query to fetch all queues for the department
   const { data: queues = [], refetch, isLoading } = useQuery({
     queryKey: ['queues', departmentId],
     queryFn: async () => {
