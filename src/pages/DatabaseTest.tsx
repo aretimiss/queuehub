@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -64,23 +63,22 @@ const DatabaseTest = () => {
       
       if (deptQueuesError) throw deptQueuesError;
       
-      // 3. นับจำนวนคิวตามสถานะ
-      const { data: statusCounts, error: statusError } = await supabase
+      // 3. นับจำนวนคิวตามสถานะ - Fixed to handle status counts properly
+      const { data: queuesByStatus, error: statusError } = await supabase
         .from('queues')
-        .select('status, count(*)')
-        .eq('department_id', selectedDepartment)
-        .order('status')
-        .then(({ data, error }) => {
-          if (error) throw error;
-          // Process the data to get counts
-          const counts = {};
-          data.forEach(item => {
-            counts[item.status] = item.count;
-          });
-          return { data: counts, error: null };
-        });
+        .select('status')
+        .eq('department_id', selectedDepartment);
       
       if (statusError) throw statusError;
+      
+      // Process the data to count by status
+      const statusCounts = {};
+      if (queuesByStatus) {
+        queuesByStatus.forEach(queue => {
+          const status = queue.status || 'unknown';
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        });
+      }
 
       setTestResults([
         {
@@ -95,7 +93,7 @@ const DatabaseTest = () => {
         },
         {
           name: "จำนวนคิวตามสถานะ",
-          data: statusCounts,
+          data: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
           type: "counts",
         }
       ]);
