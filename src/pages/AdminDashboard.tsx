@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -68,8 +69,9 @@ const AdminDashboard = () => {
       // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed the query format
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
-        .select('status, count(*)', { count: 'exact' })
-        .groupBy('status');
+        .select('status', { count: 'exact' })
+        .is('status', 'waiting')
+        .or('status.eq.called,status.eq.completed,status.eq.cancelled');
       
       if (statsError) throw statsError;
       
