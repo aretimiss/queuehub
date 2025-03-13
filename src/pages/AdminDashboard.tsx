@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { fetchAllDepartments } from "@/services/api";
 import { Department } from "@/lib/types";
 import QueueManagement from "@/components/staff/QueueManagement";
 import { toast } from "sonner";
+import QueueStats from "@/components/staff/QueueStats";
 
 const AdminDashboard = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -51,6 +51,11 @@ const AdminDashboard = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-hospital-700">แผงควบคุมผู้ดูแลระบบ (ทดสอบ)</h1>
         <Button variant="outline" onClick={handleLogout}>ออกจากระบบ</Button>
+      </div>
+
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-4">สถิติคิว</h2>
+        {selectedDepartment && <QueueStats departmentId={selectedDepartment} />}
       </div>
 
       <Card className="mb-6">

@@ -1,10 +1,10 @@
-
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react"; // Add useMemo
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Queue } from "@/lib/types";
 import QueueList from "./QueueList";
+import { fetchQueuesByDepartment, updateQueueStatus } from "@/services/api"; // Add import
 
 interface QueueManagementProps {
   departmentId: string;
@@ -13,121 +13,133 @@ interface QueueManagementProps {
 const QueueManagement = ({ departmentId }: QueueManagementProps) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("waiting");
+  const [filteredQueues, setFilteredQueues] = useState<{ // Add filteredQueues state
+    waiting: Queue[];
+    serving: Queue[];
+    called: Queue[];
+    completed: Queue[];
+    cancelled: Queue[];
+  }>({
+    waiting: [],
+    serving: [],
+    called: [],
+    completed: [],
+    cancelled: [],
+  });
 
-  const { data: queues = [] } = useQuery({
+  const { data: queues = [], refetch } = useQuery({
     queryKey: ['queues', departmentId],
     queryFn: () => fetchQueuesByDepartment(departmentId),
     enabled: !!departmentId
   });
 
   const updateQueueMutation = useMutation({
-    mutationFn: ({ queueId, status }: { queueId: string, status: string }) => 
+    mutationFn: ({ queueId, status }: { queueId: string, status: string }) =>
       updateQueueStatus(queueId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['queues'] });
-      toast.success("อัพเดตสถานะคิวเรียบร้อย");
+    onMutate: async ({ queueId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['queues', departmentId] });
+      const previousQueues = queryClient.getQueryData(['queues', departmentId]);
+
+      queryClient.setQueryData(['queues', departmentId], (old: Queue[] | undefined) => {
+        return old?.map(queue => {
+          if (queue.id === queueId) {
+            return { ...queue, status };
+          }
+          return queue;
+        });
+      });
+
+      return { previousQueues };
     },
-    onError: (error) => {
-      console.error("Error updating queue:", error);
-      toast.error("เกิดข้อผิดพลาดในการอัพเดตสถานะคิว");
+    onError: (err, newQueue, context) => {
+      queryClient.setQueryData(['queues', departmentId], context?.previousQueues);
+      toast.error("เกิดข้อผิดพลาดในการอัปเดตสถานะคิว");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues', departmentId] });
+      refetch();
+    },
+    onSuccess: () => {
+      toast.success("อัปเดตสถานะคิวเรียบร้อย");
     }
   });
 
-  const handleStatusUpdate = (queueId: string, status: string) => {
-    updateQueueMutation.mutate({ queueId, status });
+  const handleStatusUpdate = (queue: Queue, status: string) => {
+    updateQueueMutation.mutate({ queueId: queue.id, status });
   };
 
-  const waitingQueues = queues.filter(q => q.status === 'waiting');
-  const calledQueues = queues.filter(q => q.status === 'called');
-  const completedQueues = queues.filter(q => q.status === 'completed');
-  const cancelledQueues = queues.filter(q => q.status === 'cancelled');
+  useEffect(() => {
+    const newFilteredQueues = {
+      waiting: queues.filter(q => q.status === 'waiting'),
+      serving: queues.filter(q => q.status === 'serving'),
+      called: queues.filter(q => q.status === 'called'),
+      completed: queues.filter(q => q.status === 'completed'),
+      cancelled: queues.filter(q => q.status === 'cancelled'),
+    };
+
+    if (JSON.stringify(newFilteredQueues) !== JSON.stringify(filteredQueues)) { // Add check
+      setFilteredQueues(newFilteredQueues);
+    }
+  }, [queues, departmentId, filteredQueues]); // Add filteredQueues to dependency array
 
   return (
     <Tabs defaultValue="waiting" value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="mb-4">
-        <TabsTrigger value="waiting">รอเรียก ({waitingQueues.length})</TabsTrigger>
-        <TabsTrigger value="called">กำลังให้บริการ ({calledQueues.length})</TabsTrigger>
-        <TabsTrigger value="completed">เสร็จสิ้น ({completedQueues.length})</TabsTrigger>
-        <TabsTrigger value="cancelled">ยกเลิก ({cancelledQueues.length})</TabsTrigger>
+        <TabsTrigger value="waiting">รอเรียก ({filteredQueues.waiting.length})</TabsTrigger>
+        <TabsTrigger value="serving">กำลังให้บริการ ({filteredQueues.serving.length})</TabsTrigger>
+        <TabsTrigger value="called">เรียกแล้ว ({filteredQueues.called.length})</TabsTrigger>
+        <TabsTrigger value="completed">เสร็จสิ้น ({filteredQueues.completed.length})</TabsTrigger>
+        <TabsTrigger value="cancelled">ยกเลิก ({filteredQueues.cancelled.length})</TabsTrigger>
       </TabsList>
-      
+
       <TabsContent value="waiting">
-        <QueueList 
-          queues={waitingQueues} 
+        <QueueList
+          queues={filteredQueues.waiting}
           onStatusUpdate={handleStatusUpdate}
           showActions={true}
           callButton={true}
           cancelButton={true}
+          serveButton={true}
         />
       </TabsContent>
-      
+
+      <TabsContent value="serving">
+        <QueueList
+          queues={filteredQueues.serving}
+          onStatusUpdate={handleStatusUpdate}
+          showActions={true}
+          cancelButton={true}
+          completeButton={true}
+        />
+      </TabsContent>
+
       <TabsContent value="called">
-        <QueueList 
-          queues={calledQueues} 
+        <QueueList
+          queues={filteredQueues.called}
           onStatusUpdate={handleStatusUpdate}
           showActions={true}
           completeButton={true}
           cancelButton={true}
         />
       </TabsContent>
-      
+
       <TabsContent value="completed">
-        <QueueList 
-          queues={completedQueues} 
+        <QueueList
+          queues={filteredQueues.completed}
           onStatusUpdate={handleStatusUpdate}
           showActions={false}
         />
       </TabsContent>
-      
+
       <TabsContent value="cancelled">
-        <QueueList 
-          queues={cancelledQueues} 
+        <QueueList
+          queues={filteredQueues.cancelled}
           onStatusUpdate={handleStatusUpdate}
           showActions={false}
         />
       </TabsContent>
     </Tabs>
   );
-};
-
-// ฟังก์ชันดึงข้อมูลคิวตามแผนก
-const fetchQueuesByDepartment = async (departmentId: string): Promise<Queue[]> => {
-  try {
-    const { supabase } = await import("@/integrations/supabase/client");
-    const { data, error } = await supabase
-      .from('queues')
-      .select(`
-        *,
-        departments:department_id (*),
-        patient:patient_id (*)
-      `)
-      .eq('department_id', departmentId);
-
-    if (error) throw error;
-    return data as Queue[];
-  } catch (error) {
-    console.error("Error fetching queues:", error);
-    return [];
-  }
-};
-
-// ฟังก์ชันอัพเดตสถานะคิว
-const updateQueueStatus = async (queueId: string, status: string): Promise<void> => {
-  try {
-    const { supabase } = await import("@/integrations/supabase/client");
-    const { error } = await supabase
-      .from('queues')
-      .update({ 
-        status, 
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', queueId);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error("Error updating queue status:", error);
-    throw error;
-  }
 };
 
 export default QueueManagement;
