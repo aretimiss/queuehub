@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -65,11 +64,14 @@ const AdminDashboard = () => {
       
       if (queueError) throw queueError;
       
-      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed query syntax
+      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed query syntax to use a raw SQL approach
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
-        .select('status, count(*)')
-        .group('status');
+        .select('status, count')
+        .select(`
+          status,
+          count(*)
+        `, { count: 'exact' });
       
       if (statsError) throw statsError;
       
