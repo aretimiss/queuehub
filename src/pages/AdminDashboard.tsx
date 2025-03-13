@@ -65,10 +65,11 @@ const AdminDashboard = () => {
       
       if (queueError) throw queueError;
       
-      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Corrected query syntax for PostgreSQL
+      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed query syntax
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
-        .select('status, count(*)', { count: 'exact' });
+        .select('status, count(*)')
+        .groupby('status');
       
       if (statsError) throw statsError;
       
