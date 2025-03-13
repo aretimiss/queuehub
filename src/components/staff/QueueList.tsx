@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { BellRing, CheckCircle, XCircle } from "lucide-react";
+import { BellRing, CheckCircle, XCircle, UserCheck } from "lucide-react";
 import { Queue } from "@/lib/types";
 
 interface QueueListProps {
@@ -13,6 +13,7 @@ interface QueueListProps {
   callButton?: boolean;
   completeButton?: boolean;
   cancelButton?: boolean;
+  startServiceButton?: boolean;
 }
 
 const QueueList = ({ 
@@ -21,7 +22,8 @@ const QueueList = ({
   showActions = false,
   callButton = false,
   completeButton = false,
-  cancelButton = false
+  cancelButton = false,
+  startServiceButton = false
 }: QueueListProps) => {
   if (queues.length === 0) {
     return <p className="text-center py-6 text-gray-500">ไม่มีข้อมูลคิว</p>;
@@ -81,6 +83,17 @@ const QueueList = ({
                     >
                       <BellRing className="mr-1 h-4 w-4" />
                       เรียกคิว
+                    </Button>
+                  )}
+                  {startServiceButton && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-purple-600 border-purple-600 hover:bg-purple-50"
+                      onClick={() => onStatusUpdate(queue.id, 'called')}
+                    >
+                      <UserCheck className="mr-1 h-4 w-4" />
+                      เข้ารับบริการ
                     </Button>
                   )}
                   {completeButton && (
