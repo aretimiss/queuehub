@@ -24,11 +24,11 @@ const App = () => (
         <div className="min-h-screen flex flex-col">
           <header className="border-b">
             <div className="container py-4">
-              <h1 className="text-2xl font-bold text-hospital-700">ระบบจองคิวโรงพยาบาล</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-hospital-700">มินิโปรเจคนักศึกษาระบบจองคิวโรงพยาบาล</h1>
             </div>
           </header>
           <MainNav />
-          <main className="flex-1 container py-6 animate-fadeIn">
+          <main className="flex-1 container py-4 md:py-6 animate-fadeIn">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/my-queue" element={<MyQueue />} />

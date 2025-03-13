@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createQueue, fetchAllDepartments } from "@/services/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Calendar, User } from "lucide-react";
 
 const Index = () => {
   const [idCard, setIdCard] = useState("");
@@ -70,10 +71,9 @@ const Index = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <div className="mb-8 text-center">
-        <h2 className="text-xl font-bold text-hospital-700 mb-2">มินิโปรเจคนักศึกษาระบบจองคิวโรงพยาบาล</h2>
-        <p className="text-muted-foreground text-sm">
+    <div className="max-w-full sm:max-w-md mx-auto px-4 sm:px-0">
+      <div className="mb-6 text-center">
+        <p className="text-muted-foreground text-sm mt-1">
           ลงทะเบียนด้วยเลขบัตรประชาชน รับคิวอัตโนมัติ พร้อมการแจ้งเตือนเมื่อใกล้ถึงคิว
         </p>
         <p className="text-muted-foreground text-sm mt-1">
@@ -81,26 +81,33 @@ const Index = () => {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>จองคิว</CardTitle>
+      <Card className="shadow-md">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center justify-center">
+            <Calendar className="mr-2 h-5 w-5 text-hospital-600" />
+            <span>จองคิว</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="idCard">เลขบัตรประชาชน</Label>
+              <div className="flex items-center">
+                <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="idCard">เลขบัตรประชาชน</Label>
+              </div>
               <Input
                 id="idCard"
                 value={idCard}
                 onChange={(e) => setIdCard(e.target.value)}
                 placeholder="กรอกเลขบัตรประชาชน 13 หลัก"
                 maxLength={13}
+                className="text-base"
               />
             </div>
             <div className="space-y-2">
               <Label>แผนก</Label>
               <Select value={departmentId} onValueChange={setDepartmentId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full text-base">
                   <SelectValue placeholder="เลือกแผนก" />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,7 +121,7 @@ const Index = () => {
             </div>
             <Button 
               type="submit" 
-              className="w-full"
+              className="w-full mt-4 py-6 text-base"
               disabled={createQueueMutation.isPending}
             >
               {createQueueMutation.isPending ? "กำลังจองคิว..." : "จองคิว"}
