@@ -64,10 +64,9 @@ const AdminDashboard = () => {
       
       if (queueError) throw queueError;
       
-      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed query syntax to use a raw SQL approach
+      // 3. ทดสอบการนับจำนวนคิวตามสถานะ - Fixed query syntax to use correct format
       const { data: queueStats, error: statsError } = await supabase
         .from('queues')
-        .select('status, count')
         .select(`
           status,
           count(*)
