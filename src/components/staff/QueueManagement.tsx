@@ -78,16 +78,21 @@ const QueueManagement = ({ departmentId }: QueueManagementProps) => {
   // Update queue status using direct Supabase query
   const updateQueueMutation = useMutation({
     mutationFn: async ({ queueId, status }: { queueId: string, status: string }) => {
+      // Changed from .single() to .maybeSingle() to handle cases where no row is returned
       const { data, error } = await supabase
         .from('queues')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', queueId)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error("Error updating queue:", error);
         throw error;
+      }
+      
+      if (!data) {
+        throw new Error("Queue not found or could not be updated");
       }
       
       return data as Queue;
