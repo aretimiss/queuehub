@@ -9,6 +9,77 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          resource_id: string | null
+          resource_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Relationships: []
+      }
+      dashboard_stats: {
+        Row: {
+          called_count: number | null
+          cancelled_count: number | null
+          completed_count: number | null
+          department_id: string | null
+          id: string
+          serving_count: number | null
+          updated_at: string | null
+          waiting_count: number | null
+        }
+        Insert: {
+          called_count?: number | null
+          cancelled_count?: number | null
+          completed_count?: number | null
+          department_id?: string | null
+          id?: string
+          serving_count?: number | null
+          updated_at?: string | null
+          waiting_count?: number | null
+        }
+        Update: {
+          called_count?: number | null
+          cancelled_count?: number | null
+          completed_count?: number | null
+          department_id?: string | null
+          id?: string
+          serving_count?: number | null
+          updated_at?: string | null
+          waiting_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_stats_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: true
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           code: string

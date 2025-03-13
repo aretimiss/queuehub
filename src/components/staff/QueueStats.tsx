@@ -1,34 +1,70 @@
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { fetchQueuesByDepartment } from "@/services/api";
-import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { Queue } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QueueStatsProps {
   departmentId: string;
 }
 
+interface DashboardStats {
+  id: string;
+  department_id: string;
+  waiting_count: number;
+  called_count: number;
+  serving_count: number;
+  completed_count: number;
+  cancelled_count: number;
+  updated_at: string;
+}
+
 const QueueStats = ({ departmentId }: QueueStatsProps) => {
-  const {
-    data: queues = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
-    queryKey: ["queues", departmentId],
-    queryFn: () => fetchQueuesByDepartment(departmentId),
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
-
-  const waitingQueues = queues.filter((q) => q.status === "waiting").length;
-  const servingQueues = queues.filter((q) => q.status === "serving").length;
-  const calledQueues = queues.filter((q) => q.status === "called").length;
-  const completedQueues = queues.filter((q) => q.status === "completed").length;
-  const cancelledQueues = queues.filter((q) => q.status === "cancelled").length;
+    const fetchStats = async () => {
+      setIsLoading(true);
+      setIsError(false);
+      
+      try {
+        const { data, error } = await supabase
+          .from('dashboard_stats')
+          .select('*')
+          .eq('department_id', departmentId)
+          .single();
+          
+        if (error) throw error;
+        setStats(data);
+      } catch (error) {
+        console.error("Error loading dashboard stats:", error);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStats();
+    
+    // Set up real-time subscription for dashboard stats updates
+    const subscription = supabase
+      .channel(`dashboard_stats_${departmentId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'dashboard_stats',
+        filter: `department_id=eq.${departmentId}`
+      }, (payload) => {
+        setStats(payload.new as DashboardStats);
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [departmentId]);
 
   if (isLoading) {
     return (
@@ -38,7 +74,7 @@ const QueueStats = ({ departmentId }: QueueStatsProps) => {
     );
   }
 
-  if (isError) {
+  if (isError || !stats) {
     return (
       <div className="text-center">
         <p className="text-red-500">ไม่สามารถโหลดข้อมูลคิวได้</p>
@@ -49,17 +85,17 @@ const QueueStats = ({ departmentId }: QueueStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
       <Card className="border-hospital-100">
-        <CardContent className="text-center">
+        <CardContent className="pt-6 text-center">
           <div className="text-4xl font-bold text-hospital-600">
-            {waitingQueues}
+            {stats.waiting_count}
           </div>
           <div className="text-sm text-muted-foreground mt-2">รอเรียก</div>
         </CardContent>
       </Card>
       <Card className="border-hospital-100">
-        <CardContent className="text-center">
+        <CardContent className="pt-6 text-center">
           <div className="text-4xl font-bold text-hospital-600">
-            {calledQueues + servingQueues}
+            {stats.called_count + stats.serving_count}
           </div>
           <div className="text-sm text-muted-foreground mt-2">
             เรียกแล้ว/กำลังให้บริการ
@@ -67,17 +103,17 @@ const QueueStats = ({ departmentId }: QueueStatsProps) => {
         </CardContent>
       </Card>
       <Card className="border-hospital-100">
-        <CardContent className="text-center">
+        <CardContent className="pt-6 text-center">
           <div className="text-4xl font-bold text-hospital-600">
-            {completedQueues}
+            {stats.completed_count}
           </div>
           <div className="text-sm text-muted-foreground mt-2">เสร็จสิ้น</div>
         </CardContent>
       </Card>
       <Card className="border-hospital-100">
-        <CardContent className="text-center">
+        <CardContent className="pt-6 text-center">
           <div className="text-4xl font-bold text-hospital-600">
-            {cancelledQueues}
+            {stats.cancelled_count}
           </div>
           <div className="text-sm text-muted-foreground mt-2">ยกเลิก</div>
         </CardContent>

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import QueueStats from "@/components/staff/QueueStats";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, XCircle, AlertCircle, Database } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Database, BarChart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
@@ -19,6 +19,7 @@ const AdminDashboard = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'unchecked' | 'success' | 'error'>('unchecked');
   const [testLoading, setTestLoading] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
   const navigate = useNavigate();
 
   // ตรวจสอบว่าได้ล็อกอินหรือไม่
@@ -47,6 +48,45 @@ const AdminDashboard = () => {
     loadDepartments();
   }, []);
 
+  // โหลด dashboard stats
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      if (!selectedDepartment) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('dashboard_stats')
+          .select('*')
+          .eq('department_id', selectedDepartment)
+          .single();
+          
+        if (error) throw error;
+        setDashboardStats(data);
+      } catch (error) {
+        console.error("Error loading dashboard stats:", error);
+      }
+    };
+    
+    fetchDashboardStats();
+    
+    // Set up real-time subscription for dashboard stats updates
+    const subscription = supabase
+      .channel('dashboard_stats_changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'dashboard_stats',
+        filter: `department_id=eq.${selectedDepartment}`
+      }, (payload) => {
+        setDashboardStats(payload.new);
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [selectedDepartment]);
+
   const testDatabaseConnection = async () => {
     setTestLoading(true);
     try {
@@ -66,26 +106,49 @@ const AdminDashboard = () => {
       
       if (queueError) throw queueError;
       
-      // 3. ทดสอบการนับจำนวนคิวตามสถานะ
-      const { data: queueStats, error: statsError } = await supabase
-        .from('queues')
-        .select('status, count', { count: 'exact', head: false })
-        .eq('status', 'waiting')
-        .or('status.eq.completed,status.eq.called,status.eq.cancelled');
-      
+      // 3. ทดสอบการเชื่อมต่อกับตาราง dashboard_stats
+      const { data: statsData, error: statsError } = await supabase
+        .from('dashboard_stats')
+        .select('*')
+        .limit(3);
+        
       if (statsError) throw statsError;
+      
+      // Log connection test results to the database
+      await supabase
+        .from('admin_logs')
+        .insert({
+          admin_id: 'admin',
+          action: 'test_connection',
+          resource_type: 'database',
+          details: { status: 'success' }
+        });
       
       setConnectionStatus('success');
       toast.success("เชื่อมต่อกับฐานข้อมูลและทดสอบการจัดการคิวสำเร็จ");
       console.log("Connection test results:");
       console.log("- Departments:", deptData);
       console.log("- Queues:", queueData);
-      console.log("- Queue Stats:", queueStats);
+      console.log("- Dashboard Stats:", statsData);
       
     } catch (error) {
       console.error("Database connection error:", error);
       setConnectionStatus('error');
       toast.error("เชื่อมต่อกับฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ");
+      
+      // Log connection failure
+      try {
+        await supabase
+          .from('admin_logs')
+          .insert({
+            admin_id: 'admin',
+            action: 'test_connection',
+            resource_type: 'database',
+            details: { status: 'error', error: JSON.stringify(error) }
+          });
+      } catch (logError) {
+        console.error("Could not log connection error:", logError);
+      }
     } finally {
       setTestLoading(false);
     }
@@ -95,12 +158,24 @@ const AdminDashboard = () => {
     sessionStorage.removeItem("adminAuthenticated");
     navigate("/admin-login");
     toast.success("ออกจากระบบแล้ว");
+    
+    // Log logout action
+    supabase
+      .from('admin_logs')
+      .insert({
+        admin_id: 'admin',
+        action: 'logout',
+        resource_type: 'session'
+      })
+      .then(({ error }) => {
+        if (error) console.error("Error logging logout:", error);
+      });
   };
 
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-hospital-700">แผงควบคุมผู้ดูแลระบบ (ทดสอบ)</h1>
+        <h1 className="text-2xl font-bold text-hospital-700">แผงควบคุมผู้ดูแลระบบ</h1>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild>
             <Link to="/database-test">
@@ -148,8 +223,58 @@ const AdminDashboard = () => {
       </Card>
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-4">สถิติคิว</h2>
-        {selectedDepartment && <QueueStats departmentId={selectedDepartment} />}
+        <h2 className="text-xl font-semibold mb-4 flex items-center">
+          <BarChart className="mr-2 h-5 w-5" />
+          สถิติคิว
+        </h2>
+        {selectedDepartment && dashboardStats ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card className="border-hospital-100">
+              <CardContent className="pt-6 text-center">
+                <div className="text-4xl font-bold text-hospital-600">
+                  {dashboardStats.waiting_count}
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">รอเรียก</div>
+              </CardContent>
+            </Card>
+            <Card className="border-hospital-100">
+              <CardContent className="pt-6 text-center">
+                <div className="text-4xl font-bold text-hospital-600">
+                  {dashboardStats.called_count}
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">เรียกแล้ว</div>
+              </CardContent>
+            </Card>
+            <Card className="border-hospital-100">
+              <CardContent className="pt-6 text-center">
+                <div className="text-4xl font-bold text-hospital-600">
+                  {dashboardStats.serving_count}
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">กำลังให้บริการ</div>
+              </CardContent>
+            </Card>
+            <Card className="border-hospital-100">
+              <CardContent className="pt-6 text-center">
+                <div className="text-4xl font-bold text-hospital-600">
+                  {dashboardStats.completed_count}
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">เสร็จสิ้น</div>
+              </CardContent>
+            </Card>
+            <Card className="border-hospital-100">
+              <CardContent className="pt-6 text-center">
+                <div className="text-4xl font-bold text-hospital-600">
+                  {dashboardStats.cancelled_count}
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">ยกเลิก</div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <p>กำลังโหลดข้อมูลสถิติ...</p>
+          </div>
+        )}
       </div>
 
       <Card className="mb-6">
@@ -175,7 +300,7 @@ const AdminDashboard = () => {
                   <p className="text-sm text-gray-600">จำนวนคิวที่รอ: {dept.total_waiting || 0}</p>
                 </div>
                 
-                {selectedDepartment && (
+                {selectedDepartment === dept.id && (
                   <QueueManagement departmentId={selectedDepartment} />
                 )}
               </TabsContent>
